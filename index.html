@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>튼튼 두더지 잡기 - 건강 식습관 게임</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            green: '#22c55e',
+                            darkGreen: '#15803d',
+                            yellow: '#eab308',
+                            red: '#ef4444',
+                            dirt: '#854d0e',
+                            hole: '#3f2305'
+                        }
+                    },
+                    keyframes: {
+                        pop: {
+                            '0%': { transform: 'translateY(100%) scale(0.5)', opacity: '0' },
+                            '40%': { transform: 'translateY(-10%) scale(1.1)', opacity: '1' },
+                            '100%': { transform: 'translateY(0%) scale(1)', opacity: '1' }
+                        },
+                        smash: {
+                            '0%': { transform: 'rotate(0deg) scale(1)' },
+                            '50%': { transform: 'rotate(-35deg) scale(1.2)' },
+                            '100%': { transform: 'rotate(0deg) scale(1)' }
+                        },
+                        floatUp: {
+                            '0%': { transform: 'translateY(0)', opacity: '1' },
+                            '100%': { transform: 'translateY(-40px)', opacity: '0' }
+                        },
+                        bounceShort: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-8px)' }
+                        }
+                    },
+                    animation: {
+                        pop: 'pop 0.3s ease-out forwards',
+                        smash: 'smash 0.15s ease-in-out',
+                        floatUp: 'floatUp 0.8s ease-out forwards',
+                        bounceShort: 'bounceShort 1s infinite'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom Styles & Non-Selectable Canvas/Grid Elements */
+        body {
+            font-family: 'Pretendard', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        .dirt-mound {
+            background: radial-gradient(circle, #543310 0%, #3f2305 80%);
+            box-shadow: inset 0 8px 12px rgba(0,0,0,0.6), 0 6px 0 #281502;
+        }
+
+        .mole-hole-mask {
+            overflow: hidden;
+            position: relative;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between items-center p-2 sm:p-4 overflow-x-hidden">
+
+    <!-- App Container -->
+    <div id="app" class="w-full max-w-md md:max-w-xl lg:max-w-2xl bg-slate-800 rounded-2xl shadow-2xl overflow-hidden border border-slate-700 flex flex-col my-auto relative min-h-[640px]">
+
+        <!-- HEADER BAR -->
+        <header class="bg-slate-900 border-b border-slate-700 px-4 py-3 flex justify-between items-center z-10">
+            <div class="flex items-center space-x-2">
+                <span class="text-2xl">🥦</span>
+                <h1 class="text-lg font-bold bg-gradient-to-r from-green-400 to-emerald-200 bg-clip-text text-transparent">
+                    튼튼 두더지 잡기
+                </h1>
+            </div>
+            <div class="flex items-center space-x-3">
+                <!-- Sound Toggle Button -->
+                <button id="soundToggleBtn" onclick="toggleSound()" class="p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-amber-400 transition" title="음향 ON/OFF">
+                    <i id="soundIcon" class="fas fa-volume-up text-lg"></i>
+                </button>
+                <!-- High Score Badge -->
+                <div class="bg-amber-500/20 text-amber-300 text-xs px-2.5 py-1 rounded-full border border-amber-500/30 font-semibold flex items-center gap-1">
+                    <i class="fas fa-trophy text-amber-400"></i>
+                    <span id="headerHighScore">0</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN CONTAINER / SCREENS CONTAINER -->
+        <main class="relative flex-1 flex flex-col justify-center items-center p-4">
+
+            <!-- ================= SCREEN 1: MAIN MENU ================= -->
+            <section id="mainMenuScreen" class="w-full flex flex-col items-center justify-center py-6 space-y-6 text-center">
+                <!-- Hero Visual -->
+                <div class="relative my-2">
+                    <div class="w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-emerald-500/10 border-4 border-emerald-500/30 flex items-center justify-center animate-bounceShort">
+                        <span class="text-6xl sm:text-7xl">🍔 Hammer 🔨</span>
+                    </div>
+                    <span class="absolute -top-2 -right-2 text-3xl animate-pulse">🥦</span>
+                    <span class="absolute -bottom-2 -left-2 text-3xl animate-pulse">🍩</span>
+                </div>
+
+                <div>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-white mb-2">건강 식품은 지키고!<br/><span class="text-rose-400">불량 식품</span>은 때려잡자!</h2>
+                    <p class="text-xs sm:text-sm text-slate-400 max-w-xs mx-auto">
+                        채소와 과일은 절대로 때리지 마세요.<br/>몸에 안 좋은 패스트푸드만 쏙쏙 잡는 순발력 게임!
+                    </p>
+                </div>
+
+                <!-- Main Menu Buttons -->
+                <div class="w-full max-w-xs space-y-3 pt-2">
+                    <button onclick="startGame()" class="w-full py-3.5 px-6 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-bold text-lg rounded-xl shadow-lg shadow-emerald-900/40 transform active:scale-95 transition flex items-center justify-center gap-2">
+                        <i class="fas fa-play"></i> 게임 시작하기
+                    </button>
+                    <button onclick="openModal('howToPlayModal')" class="w-full py-2.5 px-6 bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold rounded-xl border border-slate-600 transition flex items-center justify-center gap-2">
+                        <i class="fas fa-circle-question"></i> 게임 방법
+                    </button>
+                    <button onclick="openModal('encyclopediaModal')" class="w-full py-2.5 px-6 bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold rounded-xl border border-slate-600 transition flex items-center justify-center gap-2">
+                        <i class="fas fa-book-open text-emerald-400"></i> 건강 도감
+                    </button>
+                </div>
+            </section>
+
+            <!-- ================= SCREEN 2: GAMEPLAY SCREEN ================= -->
+            <section id="gameplayScreen" class="w-full hidden flex-col items-center justify-between h-full space-y-3">
+                <!-- HUD TOP PANEL -->
+                <div class="w-full bg-slate-900/90 rounded-xl p-3 border border-slate-700 shadow-md">
+                    <div class="flex justify-between items-center mb-1">
+                        <!-- Lives Hearts -->
+                        <div class="flex items-center space-x-1" id="heartsContainer">
+                            <span class="text-rose-500 text-xl"><i class="fas fa-heart"></i></span>
+                            <span class="text-rose-500 text-xl"><i class="fas fa-heart"></i></span>
+                            <span class="text-rose-500 text-xl"><i class="fas fa-heart"></i></span>
+                        </div>
+                        <!-- Combo Indicator -->
+                        <div id="comboBadge" class="opacity-0 transition-opacity duration-200 bg-amber-500 text-slate-950 font-black text-xs px-2 py-0.5 rounded-full animate-bounce">
+                            <span id="comboText">2 COMBO!</span>
+                        </div>
+                        <!-- Pause Button -->
+                        <button onclick="togglePauseGame()" class="text-slate-400 hover:text-white px-2 py-0.5 rounded bg-slate-800 text-xs font-semibold border border-slate-700">
+                            <i id="pauseBtnIcon" class="fas fa-pause mr-1"></i>일시정지
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 items-center text-center">
+                        <!-- Score Display -->
+                        <div class="bg-slate-800/80 rounded-lg p-1.5 border border-slate-700">
+                            <span class="text-[10px] text-slate-400 uppercase tracking-wider block">점수</span>
+                            <span id="currentScore" class="text-xl sm:text-2xl font-black text-emerald-400">0</span>
+                        </div>
+                        <!-- Time Display -->
+                        <div class="bg-slate-800/80 rounded-lg p-1.5 border border-slate-700">
+                            <span class="text-[10px] text-slate-400 uppercase tracking-wider block">남은 시간</span>
+                            <span id="timeLeft" class="text-xl sm:text-2xl font-black text-amber-400">60s</span>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar for Time -->
+                    <div class="w-full bg-slate-800 h-2 rounded-full mt-2 overflow-hidden border border-slate-700/50">
+                        <div id="timeProgressBar" class="bg-gradient-to-r from-emerald-500 via-amber-400 to-rose-500 h-full w-full transition-all duration-300"></div>
+                    </div>
+                </div>
+
+                <!-- GAME BOARD GRID (3x3 Mole Holes) -->
+                <div class="relative w-full max-w-sm sm:max-w-md aspect-square bg-emerald-900/30 border-2 border-emerald-800/60 rounded-2xl p-3 sm:p-4 grid grid-cols-3 gap-2 sm:gap-3 shadow-inner">
+                    <!-- 9 Holes will be injected here via JS -->
+                    <div id="gridHolesContainer" class="contents">
+                        <!-- Example Hole Structure (Repeated 9 times in JS) -->
+                    </div>
+
+                    <!-- Floating Floating Effect Layer (Scores, Misses, Hits) -->
+                    <div id="effectOverlay" class="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl z-20"></div>
+                </div>
+
+                <!-- Footer Tip in Game -->
+                <div class="text-center text-xs text-slate-400 py-1">
+                    💡 <span class="text-slate-300">불량 식품만 탭하세요!</span> 채소나 과일을 치면 하트가 차감됩니다!
+                </div>
+            </section>
+        </main>
+
+        <!-- FOOTER INFO BAR -->
+        <footer class="bg-slate-900 border-t border-slate-800 px-4 py-2 text-center text-xs text-slate-500">
+            <span>튼튼 두더지 잡기 &copy; 식습관 개선 교육용 아케이드</span>
+        </footer>
+    </div>
+
+    <!-- ================= MODAL 1: HOW TO PLAY ================= -->
+    <div id="howToPlayModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-5 shadow-2xl relative flex flex-col max-h-[85vh]">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
+                <h3 class="text-lg font-bold text-emerald-400 flex items-center gap-2">
+                    <i class="fas fa-gamepad"></i> 게임 규칙 & 방법
+                </h3>
+                <button onclick="closeModal('howToPlayModal')" class="text-slate-400 hover:text-white p-1">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4 text-sm text-slate-300 overflow-y-auto custom-scrollbar pr-1">
+                <div class="bg-slate-900/70 p-3 rounded-xl border border-rose-500/30">
+                    <h4 class="font-bold text-rose-400 mb-1 flex items-center gap-1.5">
+                        <span>🍔</span> 불량 식품 (타겟 - 때려잡기!)
+                    </h4>
+                    <p class="text-xs text-slate-300">햄버거, 감자튀김, 탄산음료, 도넛 등 불량 식품이 나오면 재빠르게 터치/클릭하세요!</p>
+                    <div class="mt-1 text-xs text-emerald-400 font-semibold">+100점 획득 | 연속 성공 시 콤보 보너스!</div>
+                </div>
+
+                <div class="bg-slate-900/70 p-3 rounded-xl border border-emerald-500/30">
+                    <h4 class="font-bold text-emerald-400 mb-1 flex items-center gap-1.5">
+                        <span>🥦</span> 건강 식품 (보호 대상 - 패스하기!)
+                    </h4>
+                    <p class="text-xs text-slate-300">브로콜리, 당근, 사과, 바나나 등 건강한 식품은 때리지 말고 그냥 보내주세요.</p>
+                    <div class="mt-1 text-xs text-rose-400 font-semibold">오타격 시: -150점 & 하트(♥) 1개 차감!</div>
+                </div>
+
+                <div class="bg-slate-900/70 p-3 rounded-xl border border-amber-500/30">
+                    <h4 class="font-bold text-amber-400 mb-1 flex items-center gap-1.5">
+                        <span>✨</span> 특수 아이템
+                    </h4>
+                    <ul class="text-xs space-y-1 list-disc list-inside text-slate-300">
+                        <li><b class="text-amber-300">황금 사과 🍎:</b> 절대 치지 않고 보내면 <b>+300점 보너스!</b></li>
+                        <li><b class="text-sky-300">시계 버거 ⏰:</b> 빠르게 터치하면 제한시간 <b>+5초 연장!</b></li>
+                    </ul>
+                </div>
+            </div>
+
+            <button onclick="closeModal('howToPlayModal')" class="mt-4 w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition">
+                확인했습니다
+            </button>
+        </div>
+    </div>
+
+    <!-- ================= MODAL 2: FOOD ENCYCLOPEDIA ================= -->
+    <div id="encyclopediaModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-5 shadow-2xl relative flex flex-col max-h-[85vh]">
+            <div class="flex justify-between items-center mb-3 border-b border-slate-700 pb-2">
+                <h3 class="text-lg font-bold text-emerald-400 flex items-center gap-2">
+                    <i class="fas fa-book-open"></i> 건강 영양 도감
+                </h3>
+                <button onclick="closeModal('encyclopediaModal')" class="text-slate-400 hover:text-white p-1">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Tab Buttons -->
+            <div class="flex border-b border-slate-700 mb-3">
+                <button id="tabHealthyBtn" onclick="switchEncyclopediaTab('healthy')" class="flex-1 py-2 font-bold text-sm text-emerald-400 border-b-2 border-emerald-400 transition">
+                    건강 식품 🥦
+                </button>
+                <button id="tabJunkBtn" onclick="switchEncyclopediaTab('junk')" class="flex-1 py-2 font-bold text-sm text-slate-400 border-b-2 border-transparent transition">
+                    불량 식품 🍟
+                </button>
+            </div>
+
+            <!-- Encyclopedia List -->
+            <div id="encyclopediaContent" class="space-y-2 overflow-y-auto custom-scrollbar flex-1 pr-1">
+                <!-- Data populated dynamically via JS -->
+            </div>
+
+            <button onclick="closeModal('encyclopediaModal')" class="mt-4 w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl transition">
+                닫기
+            </button>
+        </div>
+    </div>
+
+    <!-- ================= MODAL 3: GAME OVER & RESULT REPORT ================= -->
+    <div id="resultModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative flex flex-col items-center text-center animate-pop">
+            
+            <!-- Result Title -->
+            <div id="resultGradeBadge" class="w-20 h-20 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-300 text-slate-950 flex items-center justify-center text-4xl font-black mb-2 shadow-lg shadow-amber-500/30 border-4 border-slate-800">
+                S
+            </div>
+            <h3 id="resultTitle" class="text-2xl font-black text-white">훌륭한 식습관 파수꾼!</h3>
+            <p id="resultSubtitle" class="text-xs text-slate-400 mt-0.5 mb-4">건강한 식탁을 성공적으로 지켜냈습니다!</p>
+
+            <!-- Score Cards -->
+            <div class="w-full grid grid-cols-2 gap-2 mb-4">
+                <div class="bg-slate-900/80 border border-slate-700 p-3 rounded-xl">
+                    <span class="text-[11px] text-slate-400 block">최종 점수</span>
+                    <span id="resultScore" class="text-2xl font-black text-emerald-400">1,250</span>
+                </div>
+                <div class="bg-slate-900/80 border border-slate-700 p-3 rounded-xl">
+                    <span class="text-[11px] text-slate-400 block">최고 기록</span>
+                    <span id="resultHighScore" class="text-2xl font-black text-amber-400">1,250</span>
+                </div>
+            </div>
+
+            <!-- Stats Breakdown -->
+            <div class="w-full bg-slate-900/60 rounded-xl p-3 border border-slate-700 text-xs space-y-2 mb-4 text-left">
+                <div class="flex justify-between items-center text-slate-300">
+                    <span>💥 때려잡은 불량 식품:</span>
+                    <span id="statJunkHit" class="font-bold text-rose-400">0개</span>
+                </div>
+                <div class="flex justify-between items-center text-slate-300">
+                    <span>🛡️ 무사히 지켜낸 건강 식품:</span>
+                    <span id="statHealthySaved" class="font-bold text-emerald-400">0개</span>
+                </div>
+                <div class="flex justify-between items-center text-slate-300">
+                    <span>💔 잘못 때린 건강 식품:</span>
+                    <span id="statHealthyMistake" class="font-bold text-amber-400">0개</span>
+                </div>
+                <div class="flex justify-between items-center text-slate-300">
+                    <span>🔥 최대 연속 콤보:</span>
+                    <span id="statMaxCombo" class="font-bold text-sky-400">0 Combo</span>
+                </div>
+            </div>
+
+            <!-- One-Point Health Tip Advice Box -->
+            <div class="w-full bg-emerald-950/50 border border-emerald-500/30 p-3 rounded-xl text-left mb-5">
+                <div class="text-xs font-bold text-emerald-400 mb-1 flex items-center gap-1">
+                    <i class="fas fa-lightbulb"></i> 원포인트 건강 리포트
+                </div>
+                <p id="resultHealthTip" class="text-xs text-emerald-100 leading-relaxed">
+                    브로콜리와 토마토는 몸의 면역력을 높여주는 최고의 슈퍼푸드입니다! 다음 게임에서도 꼭 때리지 말고 지켜주세요.
+                </p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="w-full flex gap-3">
+                <button onclick="restartGame()" class="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-bold rounded-xl shadow-lg transition flex items-center justify-center gap-1.5">
+                    <i class="fas fa-rotate-right"></i> 다시 하기
+                </button>
+                <button onclick="goToMainMenu()" class="px-5 py-3 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl transition">
+                    메인으로
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= JAVASCRIPT LOGIC ================= -->
+    <script>
+        // -------------------------------------------------------------
+        // 1. DATA DEFINITIONS & FOOD DATABASE
+        // -------------------------------------------------------------
+        const FOOD_DATABASE = {
+            healthy: [
+                { id: 'broccoli', name: '브로콜리', emoji: '🥦', type: 'healthy', tip: '비타민 C가 풍부하여 면역력 향상에 최고예요!' },
+                { id: 'carrot', name: '당근', emoji: '🥕', type: 'healthy', tip: '베타카로틴이 풍부하여 눈 건강을 보호해 줍니다.' },
+                { id: 'tomato', name: '토마토', emoji: '🍅', type: 'healthy', tip: '라이코펜 성분이 심혈관 건강 및 항산화에 도움이 됩니다.' },
+                { id: 'apple', name: '사과', emoji: '🍎', type: 'healthy', tip: '식이섬유가 풍부해 장 운동과 소화를 돕습니다.' },
+                { id: 'banana', name: '바나나', emoji: '🍌', type: 'healthy', tip: '칼륨과 에너지 보충에 탁월한 건강 과일입니다.' },
+                { id: 'milk', name: '우유', emoji: '🥛', type: 'healthy', tip: '칼슘과 단백질이 풍부하여 뼈를 튼튼하게 해 줍니다.' }
+            ],
+            junk: [
+                { id: 'burger', name: '햄버거', emoji: '🍔', type: 'junk', tip: '포화지방과 나트륨이 많아 자주 먹으면 비만의 원인이 됩니다.' },
+                { id: 'fries', name: '감자튀김', emoji: '🍟', type: 'junk', tip: '트랜스지방과 염분이 높아 트랜스지방 섭취를 주의해야 합니다.' },
+                { id: 'soda', name: '탄산음료', emoji: '🥤', type: 'junk', tip: '당분이 과다하여 치아 부식과 혈당 급상승을 유발합니다.' },
+                { id: 'donut', name: '도넛', emoji: '🍩', type: 'junk', tip: '단당류와 정제당이 많아 유해 칼로리가 높습니다.' },
+                { id: 'pizza', name: '피자', emoji: '🍕', type: 'junk', tip: '고칼로리 및 포화지방 수치가 높아 영양 불균형을 일으킵니다.' },
+                { id: 'candy', name: '사탕', emoji: '🍬', type: 'junk', tip: '치통 및 당뇨 위험을 높이는 단순당 덩어리입니다.' }
+            ],
+            special: [
+                { id: 'golden_apple', name: '황금 사과', emoji: '✨🍎', type: 'golden_apple', tip: '때리지 않고 넘기면 대량의 보너스 점수를 받습니다!' },
+                { id: 'time_burger', name: '시계 버거', emoji: '⏰🍔', type: 'time_burger', tip: '때려잡으면 제한시간이 5초 연장됩니다!' }
+            ]
+        };
+
+        // -------------------------------------------------------------
+        // 2. AUDIO SYNTHESIZER (Web Audio API)
+        // -------------------------------------------------------------
+        let audioCtx = null;
+        let isSoundOn = true;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    audioCtx = new AudioContext();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSound(type) {
+            if (!isSoundOn) return;
+            try {
+                initAudio();
+                if (!audioCtx) return;
+
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'hit') {
+                    // Quick satisfying pop/hit sound
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(320, now);
+                    osc.frequency.exponentialRampToValueAtTime(120, now + 0.1);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } else if (type === 'error') {
+                    // Low buzzing error tone
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.setValueAtTime(110, now + 0.15);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'combo') {
+                    // High-pitched chime for combo
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                    osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'bonus') {
+                    // Time or golden bonus sound
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.2);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'gameover') {
+                    // Game over descending sound
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.setValueAtTime(300, now + 0.2);
+                    osc.frequency.setValueAtTime(200, now + 0.4);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+                    osc.start(now);
+                    osc.stop(now + 0.6);
+                }
+            } catch (e) {
+                console.warn('Audio playback error:', e);
+            }
+        }
+
+        function toggleSound() {
+            isSoundOn = !isSoundOn;
+            const soundIcon = document.getElementById('soundIcon');
+            if (isSoundOn) {
+                soundIcon.className = 'fas fa-volume-up text-lg';
+                playSound('hit');
+            } else {
+                soundIcon.className = 'fas fa-volume-mute text-lg text-slate-500';
+            }
+        }
+
+        // -------------------------------------------------------------
+        // 3. GAME STATE VARIABLES
+        // -------------------------------------------------------------
+        let gameState = {
+            isPlaying: false,
+            isPaused: false,
+            score: 0,
+            highScore: 0,
+            timeLeft: 60,
+            maxTime: 60,
+            lives: 3,
+            maxLives: 3,
+            combo: 0,
+            maxCombo: 0,
+            statJunkHit: 0,
+            statHealthySaved: 0,
+            statHealthyMistake: 0,
+            timerInterval: null,
+            spawnTimeout: null,
+            activeHoles: Array(9).fill(null) // Stores current active item per hole
+        };
+
+        // Load High Score from LocalStorage
+        function loadHighScore() {
+            const saved = localStorage.getItem('whack_food_high_score');
+            if (saved) {
+                gameState.highScore = parseInt(saved, 10) || 0;
+            }
+            document.getElementById('headerHighScore').innerText = gameState.highScore.toLocaleString();
+        }
+
+        function saveHighScore() {
+            if (gameState.score > gameState.highScore) {
+                gameState.highScore = gameState.score;
+                localStorage.setItem('whack_food_high_score', gameState.highScore);
+                document.getElementById('headerHighScore').innerText = gameState.highScore.toLocaleString();
+            }
+        }
+
+        // -------------------------------------------------------------
+        // 4. UI INITIALIZATION & HOLE GRID SETUP
+        // -------------------------------------------------------------
+        function initGridHoles() {
+            const container = document.getElementById('gridHolesContainer');
+            container.innerHTML = '';
+
+            for (let i = 0; i < 9; i++) {
+                const holeWrapper = document.createElement('div');
+                holeWrapper.className = 'relative flex flex-col justify-end items-center mole-hole-mask rounded-2xl cursor-pointer select-none';
+                holeWrapper.onclick = (e) => handleHoleClick(i, e);
+
+                holeWrapper.innerHTML = `
+                    <!-- Dirt Mound Base -->
+                    <div class="absolute bottom-0 w-full h-2/3 dirt-mound rounded-b-2xl rounded-t-lg z-0 border-t-2 border-amber-900/40"></div>
+                    
+                    <!-- Emerging Mole / Food Container -->
+                    <div id="holeItem_${i}" class="relative z-10 transform translate-y-full transition-transform duration-200 ease-out pb-2 flex flex-col items-center pointer-events-none">
+                        <!-- Emoji Asset -->
+                        <span id="holeEmoji_${i}" class="text-4xl sm:text-5xl filter drop-shadow-md">🥦</span>
+                        <!-- Name Badge -->
+                        <span id="holeName_${i}" class="text-[10px] font-bold bg-slate-900/80 text-white px-2 py-0.5 rounded-full border border-slate-700 shadow-sm mt-1 opacity-90">
+                            브로콜리
+                        </span>
+                    </div>
+
+                    <!-- Grass Top Accent -->
+                    <div class="absolute bottom-0 w-full h-1/4 bg-emerald-700/40 rounded-b-2xl pointer-events-none border-t border-emerald-500/30"></div>
+                `;
+
+                container.appendChild(holeWrapper);
+            }
+        }
+
+        // -------------------------------------------------------------
+        // 5. GAME LOGIC & ENGINE
+        // -------------------------------------------------------------
+        function startGame() {
+            initAudio();
+            // Reset game state
+            gameState.isPlaying = true;
+            gameState.isPaused = false;
+            gameState.score = 0;
+            gameState.timeLeft = 60;
+            gameState.maxTime = 60;
+            gameState.lives = 3;
+            gameState.combo = 0;
+            gameState.maxCombo = 0;
+            gameState.statJunkHit = 0;
+            gameState.statHealthySaved = 0;
+            gameState.statHealthyMistake = 0;
+            gameState.activeHoles = Array(9).fill(null);
+
+            // Hide menu, show gameplay
+            document.getElementById('mainMenuScreen').classList.add('hidden');
+            document.getElementById('gameplayScreen').classList.remove('hidden');
+            document.getElementById('gameplayScreen').classList.add('flex');
+
+            updateHUD();
+            resetGridDisplay();
+
+            // Start main clock timer
+            clearInterval(gameState.timerInterval);
+            gameState.timerInterval = setInterval(gameClockTick, 1000);
+
+            // Start dynamic mole spawning
+            scheduleNextSpawn();
+        }
+
+        function gameClockTick() {
+            if (gameState.isPaused || !gameState.isPlaying) return;
+
+            gameState.timeLeft--;
+            updateHUD();
+
+            if (gameState.timeLeft <= 0) {
+                endGame(true); // Victory / Time Out
+            }
+        }
+
+        function scheduleNextSpawn() {
+            if (!gameState.isPlaying || gameState.isPaused) return;
+
+            // Difficulty scaling: As time decreases, interval gets faster
+            const timePassed = gameState.maxTime - gameState.timeLeft;
+            const speedFactor = Math.min(timePassed / 60, 1); // 0 to 1
+            const minDelay = 400 - (speedFactor * 180); // 400ms down to 220ms
+            const maxDelay = 900 - (speedFactor * 400); // 900ms down to 500ms
+
+            const nextDelay = Math.floor(Math.random() * (maxDelay - minDelay)) + minDelay;
+
+            clearTimeout(gameState.spawnTimeout);
+            gameState.spawnTimeout = setTimeout(() => {
+                spawnMoleItem();
+                scheduleNextSpawn();
+            }, nextDelay);
+        }
+
+        function spawnMoleItem() {
+            if (!gameState.isPlaying || gameState.isPaused) return;
+
+            // Find available empty holes
+            const emptyIndices = [];
+            gameState.activeHoles.forEach((item, idx) => {
+                if (item === null) emptyIndices.push(idx);
+            });
+
+            if (emptyIndices.length === 0) return;
+
+            const randomHoleIdx = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+
+            // Choose item type probabilities:
+            // 55% Junk Food, 35% Healthy Food, 10% Special Items
+            const rand = Math.random();
+            let selectedItem = null;
+
+            if (rand < 0.55) {
+                // Junk food
+                const junkList = FOOD_DATABASE.junk;
+                selectedItem = { ...junkList[Math.floor(Math.random() * junkList.length)] };
+            } else if (rand < 0.90) {
+                // Healthy food
+                const healthyList = FOOD_DATABASE.healthy;
+                selectedItem = { ...healthyList[Math.floor(Math.random() * healthyList.length)] };
+            } else {
+                // Special Item
+                const isClock = Math.random() < 0.5;
+                selectedItem = { ...FOOD_DATABASE.special[isClock ? 1 : 0] };
+            }
+
+            // Duration mole stays popped up (faster as game progresses)
+            const timePassed = gameState.maxTime - gameState.timeLeft;
+            const stayDuration = Math.max(1400 - (timePassed * 12), 750);
+
+            // Assign to hole
+            gameState.activeHoles[randomHoleIdx] = {
+                ...selectedItem,
+                spawnTime: Date.now(),
+                duration: stayDuration,
+                hit: false
+            };
+
+            // Render pop up animation
+            renderHolePop(randomHoleIdx, selectedItem);
+
+            // Timeout to retract item if missed
+            setTimeout(() => {
+                retractMoleItem(randomHoleIdx, false);
+            }, stayDuration);
+        }
+
+        function renderHolePop(holeIdx, item) {
+            const itemElem = document.getElementById(`holeItem_${holeIdx}`);
+            const emojiElem = document.getElementById(`holeEmoji_${holeIdx}`);
+            const nameElem = document.getElementById(`holeName_${holeIdx}`);
+
+            if (!itemElem) return;
+
+            emojiElem.innerText = item.emoji;
+            nameElem.innerText = item.name;
+
+            // Apply badge color depending on type
+            if (item.type === 'junk') {
+                nameElem.className = 'text-[10px] font-bold bg-rose-900/90 text-rose-200 px-2 py-0.5 rounded-full border border-rose-500/50 shadow-sm mt-1';
+            } else if (item.type === 'healthy') {
+                nameElem.className = 'text-[10px] font-bold bg-emerald-900/90 text-emerald-200 px-2 py-0.5 rounded-full border border-emerald-500/50 shadow-sm mt-1';
+            } else {
+                nameElem.className = 'text-[10px] font-bold bg-amber-900/90 text-amber-200 px-2 py-0.5 rounded-full border border-amber-500/50 shadow-sm mt-1';
+            }
+
+            itemElem.classList.remove('translate-y-full');
+            itemElem.classList.add('translate-y-0');
+        }
+
+        function retractMoleItem(holeIdx, wasHit) {
+            const activeItem = gameState.activeHoles[holeIdx];
+            if (!activeItem) return;
+
+            const itemElem = document.getElementById(`holeItem_${holeIdx}`);
+            if (itemElem) {
+                itemElem.classList.remove('translate-y-0');
+                itemElem.classList.add('translate-y-full');
+            }
+
+            // Handle unhit / passed item evaluation
+            if (!wasHit && !activeItem.hit) {
+                if (activeItem.type === 'healthy') {
+                    // Successfully protected healthy food!
+                    gameState.score += 10;
+                    gameState.statHealthySaved++;
+                    showFloatingText(holeIdx, '+10 보호!', 'text-emerald-400');
+                } else if (activeItem.type === 'golden_apple') {
+                    // Successfully passed golden apple!
+                    gameState.score += 300;
+                    gameState.statHealthySaved++;
+                    playSound('bonus');
+                    showFloatingText(holeIdx, '+300 보너스! 🍎', 'text-amber-300 font-extrabold');
+                } else if (activeItem.type === 'junk') {
+                    // Missed junk food reset combo
+                    resetCombo();
+                }
+            }
+
+            gameState.activeHoles[holeIdx] = null;
+            updateHUD();
+        }
+
+        // -------------------------------------------------------------
+        // 6. INTERACTION & SMASH HANDLING
+        // -------------------------------------------------------------
+        function handleHoleClick(holeIdx, event) {
+            if (!gameState.isPlaying || gameState.isPaused) return;
+
+            const activeItem = gameState.activeHoles[holeIdx];
+            if (!activeItem || activeItem.hit) return;
+
+            activeItem.hit = true;
+
+            // Trigger click animation on container
+            const itemElem = document.getElementById(`holeItem_${holeIdx}`);
+            if (itemElem) {
+                itemElem.classList.add('animate-smash');
+                setTimeout(() => itemElem.classList.remove('animate-smash'), 200);
+            }
+
+            // Process score/penalty according to item type
+            if (activeItem.type === 'junk') {
+                // SUCCESS HIT JUNK FOOD
+                gameState.statJunkHit++;
+                gameState.combo++;
+                if (gameState.combo > gameState.maxCombo) {
+                    gameState.maxCombo = gameState.combo;
+                }
+
+                const comboMultiplier = gameState.combo >= 3 ? 1.5 : 1.0;
+                const pointsEarned = Math.round(100 * comboMultiplier);
+                gameState.score += pointsEarned;
+
+                playSound('hit');
+                showFloatingText(holeIdx, `+${pointsEarned}`, 'text-emerald-400 font-black text-lg');
+
+                if (gameState.combo >= 3) {
+                    playSound('combo');
+                }
+
+            } else if (activeItem.type === 'time_burger') {
+                // HIT SPECIAL TIME BURGER
+                gameState.timeLeft = Math.min(gameState.timeLeft + 5, gameState.maxTime);
+                gameState.score += 150;
+                playSound('bonus');
+                showFloatingText(holeIdx, '+5초 연장! ⏰', 'text-sky-300 font-black');
+
+            } else if (activeItem.type === 'healthy' || activeItem.type === 'golden_apple') {
+                // MISTAKE: HIT HEALTHY FOOD
+                gameState.statHealthyMistake++;
+                gameState.lives--;
+                gameState.score = Math.max(0, gameState.score - 150);
+                resetCombo();
+
+                playSound('error');
+                showFloatingText(holeIdx, '아파요! -150', 'text-rose-400 font-black');
+
+                // Check Game Over by life loss
+                if (gameState.lives <= 0) {
+                    updateHUD();
+                    endGame(false);
+                    return;
+                }
+            }
+
+            updateHUD();
+
+            // Immediately retract hole item on hit
+            retractMoleItem(holeIdx, true);
+        }
+
+        function resetCombo() {
+            gameState.combo = 0;
+            updateHUD();
+        }
+
+        function showFloatingText(holeIdx, text, colorClass) {
+            const overlay = document.getElementById('effectOverlay');
+            if (!overlay) return;
+
+            // Calculate grid coordinate offset
+            const row = Math.floor(holeIdx / 3);
+            const col = holeIdx % 3;
+
+            const floatElem = document.createElement('div');
+            floatElem.className = `absolute pointer-events-none text-xs sm:text-sm shadow-sm animate-floatUp z-30 ${colorClass}`;
+            floatElem.style.left = `${col * 33.3 + 10}%`;
+            floatElem.style.top = `${row * 33.3 + 20}%`;
+            floatElem.innerText = text;
+
+            overlay.appendChild(floatElem);
+
+            setTimeout(() => {
+                floatElem.remove();
+            }, 800);
+        }
+
+        // -------------------------------------------------------------
+        // 7. HUD UPDATES & PAUSE/RESUME
+        // -------------------------------------------------------------
+        function updateHUD() {
+            // Update Score
+            document.getElementById('currentScore').innerText = gameState.score.toLocaleString();
+
+            // Update Timer
+            document.getElementById('timeLeft').innerText = `${gameState.timeLeft}s`;
+            const progressPercent = (gameState.timeLeft / gameState.maxTime) * 100;
+            document.getElementById('timeProgressBar').style.width = `${progressPercent}%`;
+
+            // Update Hearts
+            const heartsContainer = document.getElementById('heartsContainer');
+            heartsContainer.innerHTML = '';
+            for (let i = 0; i < gameState.maxLives; i++) {
+                const heartSpan = document.createElement('span');
+                if (i < gameState.lives) {
+                    heartSpan.className = 'text-rose-500 text-lg sm:text-xl';
+                    heartSpan.innerHTML = '<i class="fas fa-heart"></i>';
+                } else {
+                    heartSpan.className = 'text-slate-600 text-lg sm:text-xl';
+                    heartSpan.innerHTML = '<i class="far fa-heart"></i>';
+                }
+                heartsContainer.appendChild(heartSpan);
+            }
+
+            // Update Combo Badge
+            const comboBadge = document.getElementById('comboBadge');
+            const comboText = document.getElementById('comboText');
+            if (gameState.combo >= 2) {
+                comboText.innerText = `${gameState.combo} COMBO!`;
+                comboBadge.classList.remove('opacity-0');
+                comboBadge.classList.add('opacity-100');
+            } else {
+                comboBadge.classList.remove('opacity-100');
+                comboBadge.classList.add('opacity-0');
+            }
+        }
+
+        function resetGridDisplay() {
+            for (let i = 0; i < 9; i++) {
+                const itemElem = document.getElementById(`holeItem_${i}`);
+                if (itemElem) {
+                    itemElem.classList.remove('translate-y-0');
+                    itemElem.classList.add('translate-y-full');
+                }
+            }
+        }
+
+        function togglePauseGame() {
+            if (!gameState.isPlaying) return;
+            gameState.isPaused = !gameState.isPaused;
+
+            const pauseBtnIcon = document.getElementById('pauseBtnIcon');
+            if (gameState.isPaused) {
+                pauseBtnIcon.className = 'fas fa-play mr-1';
+            } else {
+                pauseBtnIcon.className = 'fas fa-pause mr-1';
+                scheduleNextSpawn();
+            }
+        }
+
+        // -------------------------------------------------------------
+        // 8. GAME OVER & RESULT REPORT GENERATOR
+        // -------------------------------------------------------------
+        function endGame(completedByTime) {
+            gameState.isPlaying = false;
+            clearInterval(gameState.timerInterval);
+            clearTimeout(gameState.spawnTimeout);
+
+            saveHighScore();
+            playSound('gameover');
+
+            // Calculate Grade S, A, B, C, D based on score and accuracy
+            let grade = 'D';
+            let title = '아쉬운 식습관 파수꾼';
+            let subtitle = '더 많은 가공식품을 가려내고 채소를 지켜주세요!';
+
+            if (gameState.score >= 1500 && gameState.statHealthyMistake <= 1) {
+                grade = 'S';
+                title = '전설의 영양 전문가! 👑';
+                subtitle = '완벽한 직관력으로 완벽하게 건강을 지켜냈습니다!';
+            } else if (gameState.score >= 1000) {
+                grade = 'A';
+                title = '훌륭한 식습관 파수꾼! ✨';
+                subtitle = '몸에 좋은 음식과 나쁜 음식을 척척 구분하시네요!';
+            } else if (gameState.score >= 600) {
+                grade = 'B';
+                title = '성장하는 건강 파수꾼 🥦';
+                subtitle = '조금만 더 주의하면 완벽해질 수 있어요!';
+            } else if (gameState.score >= 300) {
+                grade = 'C';
+                title = '초보 식습관 탐험가 🔍';
+                subtitle = '건강 식품을 때리지 않도록 주의를 기울여주세요.';
+            }
+
+            // Set Grade Display
+            const badge = document.getElementById('resultGradeBadge');
+            badge.innerText = grade;
+
+            document.getElementById('resultTitle').innerText = title;
+            document.getElementById('resultSubtitle').innerText = subtitle;
+            document.getElementById('resultScore').innerText = gameState.score.toLocaleString();
+            document.getElementById('resultHighScore').innerText = gameState.highScore.toLocaleString();
+
+            // Set Stats
+            document.getElementById('statJunkHit').innerText = `${gameState.statJunkHit}개`;
+            document.getElementById('statHealthySaved').innerText = `${gameState.statHealthySaved}개`;
+            document.getElementById('statHealthyMistake').innerText = `${gameState.statHealthyMistake}개`;
+            document.getElementById('statMaxCombo').innerText = `${gameState.maxCombo} Combo`;
+
+            // Dynamic One-Point Health Tip Advice
+            const tipElem = document.getElementById('resultHealthTip');
+            if (gameState.statHealthyMistake > 2) {
+                tipElem.innerText = '⚠️ 실수로 실수로 채소/과일을 너무 많이 치셨네요! 브로콜리, 당근, 사과는 우리 몸에 비타민과 유용한 식이섬유를 주는 고마운 친구들입니다.';
+            } else if (gameState.statJunkHit > 10) {
+                tipElem.innerText = '🎉 패스트푸드와 가공식품을 정확하게 가려내셨습니다! 기름진 감자튀김과 탄산음료 대신 시원한 물과 수분을 공급하는 당근, 사과를 섭취해 보세요!';
+            } else {
+                tipElem.innerText = '💡 영양 팁: 가공식품에 많은 나트륨과 당분은 가끔씩만 즐기고, 매일 정갈한 신선 식품을 섭취하면 피로 해소에 큰 도움이 됩니다.';
+            }
+
+            // Open Result Modal
+            openModal('resultModal');
+        }
+
+        function restartGame() {
+            closeModal('resultModal');
+            startGame();
+        }
+
+        function goToMainMenu() {
+            closeModal('resultModal');
+            document.getElementById('gameplayScreen').classList.add('hidden');
+            document.getElementById('mainMenuScreen').classList.remove('hidden');
+        }
+
+        // -------------------------------------------------------------
+        // 9. ENCYCLOPEDIA & MODAL CONTROLS
+        // -------------------------------------------------------------
+        function openModal(id) {
+            const modal = document.getElementById(id);
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+            if (id === 'encyclopediaModal') {
+                switchEncyclopediaTab('healthy');
+            }
+        }
+
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        function switchEncyclopediaTab(type) {
+            const tabHealthyBtn = document.getElementById('tabHealthyBtn');
+            const tabJunkBtn = document.getElementById('tabJunkBtn');
+            const container = document.getElementById('encyclopediaContent');
+
+            if (type === 'healthy') {
+                tabHealthyBtn.className = 'flex-1 py-2 font-bold text-sm text-emerald-400 border-b-2 border-emerald-400 transition';
+                tabJunkBtn.className = 'flex-1 py-2 font-bold text-sm text-slate-400 border-b-2 border-transparent transition';
+                renderEncyclopediaItems(FOOD_DATABASE.healthy, 'healthy');
+            } else {
+                tabJunkBtn.className = 'flex-1 py-2 font-bold text-sm text-rose-400 border-b-2 border-rose-400 transition';
+                tabHealthyBtn.className = 'flex-1 py-2 font-bold text-sm text-slate-400 border-b-2 border-transparent transition';
+                renderEncyclopediaItems(FOOD_DATABASE.junk, 'junk');
+            }
+        }
+
+        function renderEncyclopediaItems(items, category) {
+            const container = document.getElementById('encyclopediaContent');
+            container.innerHTML = '';
+
+            items.forEach(item => {
+                const card = document.createElement('div');
+                const isHealthy = category === 'healthy';
+                const borderClass = isHealthy ? 'border-emerald-500/30 bg-slate-900/60' : 'border-rose-500/30 bg-slate-900/60';
+                const tagClass = isHealthy ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300';
+                const actionText = isHealthy ? '🛡️ 지켜주세요!' : '💥 때려잡으세요!';
+
+                card.className = `p-3 rounded-xl border ${borderClass} flex items-start gap-3`;
+                card.innerHTML = `
+                    <div class="text-3xl p-2 bg-slate-800 rounded-lg border border-slate-700 flex-shrink-0">
+                        ${item.emoji}
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-bold text-white text-sm">${item.name}</h4>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${tagClass}">
+                                ${actionText}
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+                            ${item.tip}
+                        </p>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // -------------------------------------------------------------
+        // 10. WINDOW ONLOAD INITIALIZATION
+        // -------------------------------------------------------------
+        window.onload = function() {
+            loadHighScore();
+            initGridHoles();
+        };
+    </script>
+</body>
+</html>
